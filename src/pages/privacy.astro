@@ -2,13 +2,11 @@
 import Base from '../layouts/Base.astro';
 import { site } from '../config/site';
 ---
-<Base title="Privacy policy">
-  <div class="wrap prose">
-    <header class="page-head">
-      <h1>Privacy policy</h1>
-    </header>
-    <!-- TODO: replace with your real Privacy policy before taking live payments. Stripe requires this page. -->
-    <p class="notice">This page is a placeholder. Publish your final Privacy policy here before launch.</p>
-    <p>Questions: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a></p>
-  </div>
+<Base title="Privacy Policy">
+  <section class="page-wrap"><div class="wrap prose">
+    <h1>Privacy Policy</h1>
+    <!-- TODO: replace with the final Privacy Policy before taking payments. Stripe and agency purchasing both expect it. -->
+    <div class="form-msg info" style="margin:24px 0">This page is a placeholder. Publish the final Privacy Policy here before launch.</div>
+    <p>Questions: <a href={`mailto:${site.contactEmail}`} style="color:var(--blue-2)">{site.contactEmail}</a></p>
+  </div></section>
 </Base>

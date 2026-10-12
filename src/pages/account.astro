@@ -1,168 +1,167 @@
 ---
 import Base from '../layouts/Base.astro';
-import { platformLabels } from '../config/site';
+import { planNames, site } from '../config/site';
 ---
 <Base title="Your account" noindex>
-  <div class="wrap account">
-    <header class="page-head">
+  <section class="page-wrap">
+    <div class="wrap">
       <h1>Your account</h1>
-      <p id="who">Loading…</p>
-    </header>
+      <p class="page-lead" id="who">Loading…</p>
+      <div class="form-msg err" id="error" role="alert" hidden></div>
 
-    <p class="notice" id="confirming" role="status" hidden>Payment received. Activating your license…</p>
-    <p class="notice ok" id="activated" role="status" hidden>Your license is active. Download below.</p>
-    <p class="notice error" id="error" role="alert" hidden></p>
-
-    <div class="cols">
-      <section aria-labelledby="dl-h" class="downloads">
-        <h2 id="dl-h">Downloads</h2>
-        <p class="hint" id="dl-locked" hidden>Downloads unlock once you have a license. <a href="/pricing/">See plans</a></p>
-        <p class="hint" id="dl-empty" hidden>No installers are published yet. Check back soon.</p>
-        <ul class="builds" id="builds" data-labels={JSON.stringify(platformLabels)}></ul>
-      </section>
-
-      <section aria-labelledby="lic-h" class="license">
-        <h2 id="lic-h">License</h2>
-        <dl id="license">
-          <div><dt>Plan</dt><dd id="plan">—</dd></div>
-          <div><dt>Status</dt><dd id="status">—</dd></div>
-          <div id="renew-row" hidden><dt id="renew-label">Renews</dt><dd id="renew">—</dd></div>
-        </dl>
-        <div class="buttons">
-          <button class="btn secondary" id="portal" type="button" hidden>Manage billing</button>
-          <a class="btn" id="buy" href="/pricing/" hidden>Choose a plan</a>
-          <button class="btn secondary" id="signout" type="button">Sign out</button>
+      <div class="acct-grid">
+        <div id="agencies" data-plans={JSON.stringify(planNames)}>
+          <div class="panel" id="noAgency" hidden>
+            <h2>No agency linked to this email</h2>
+            <p class="muted" style="margin-top:8px">Licenses appear here for the contact email on your agency’s quote or invoice. If you’re running a pilot or have bought licenses, sign in with that address, or email <a href={`mailto:${site.contactEmail}`} style="color:var(--blue-2)">{site.contactEmail}</a> to be added.</p>
+            <a href="/#contact" class="btn btn-ghost" style="margin-top:18px">Request a quote or pilot</a>
+          </div>
         </div>
-      </section>
+
+        <aside class="panel">
+          <h2>Downloads</h2>
+          <p class="sub">The same installer runs every edition. Enter your license key in Blueline to unlock agency features.</p>
+          <div class="side-list">
+            <a class="btn btn-gold" href="/api/download">Download Blueline for Windows</a>
+            <a class="btn btn-ghost" href="/api/resource?name=security-summary">Security &amp; CJIS summary (PDF)</a>
+            <button class="btn btn-ghost" type="button" id="vendor">Vendor packet: W-9, EULA, quote template (ZIP)</button>
+          </div>
+          <div class="side-list" style="margin-top:22px">
+            <button class="btn btn-ghost" type="button" id="signout">Sign out</button>
+          </div>
+        </aside>
+      </div>
     </div>
-  </div>
+  </section>
 </Base>
 
-<template id="build-tpl">
-  <li>
-    <div>
-      <strong class="b-name"></strong>
-      <span class="b-meta"></span>
+<template id="agencyTpl">
+  <div class="panel agency">
+    <div class="agency-head">
+      <div><h2 class="a-name"></h2><p class="sub a-ori"></p></div>
+      <button class="btn btn-ghost btn-sm a-billing" type="button" hidden>Invoices &amp; billing</button>
     </div>
-    <button class="btn small" type="button">Download</button>
-  </li>
+    <p class="muted small a-empty" hidden style="margin-top:14px">No licenses yet. They appear here as soon as an invoice is paid or a pilot starts.</p>
+    <table class="lic-table">
+      <thead><tr><th>Plan</th><th>Seats</th><th>Status</th><th>Dates</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </template>
-
-<style>
-  .cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem 4rem; align-items: start; }
-  .account h2 { font-size: var(--t-3); padding-bottom: 0.8rem; border-bottom: 2px solid var(--ink); margin-bottom: 0.2rem; }
-  .hint { color: var(--muted); margin-top: 1rem; }
-  .builds { list-style: none; margin: 0; padding: 0; }
-  .builds li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--rule); }
-  .builds strong { display: block; font-size: var(--t-2); font-variation-settings: 'wdth' 112; }
-  .b-meta { color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; }
-  .license dl { margin: 0 0 1.5rem; }
-  .license dl > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--rule); }
-  .license dt { color: var(--muted); }
-  .license dd { margin: 0; font-weight: 600; text-align: right; }
-  .buttons { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } }
-</style>
 
 <script>
   import { supabase, getSession, authConfigured } from '../lib/supabase';
   import { api } from '../lib/api';
 
-  interface Me {
-    email: string;
-    hasAccess: boolean;
-    hasBillingAccount: boolean;
-    license: { plan: string | null; status: string; current_period_end: string | null; cancel_at_period_end: boolean } | null;
+  interface License {
+    key: string; plan: string; kind: 'subscription' | 'term' | 'perpetual' | 'pilot'; seats: number; status: string; active: boolean;
+    renewsAt: string | null; expiresAt: string | null; cancelAtPeriodEnd: boolean; maintenanceUntil: string | null;
   }
-  interface Release { platform: string; version: string; filename: string; sha256: string | null; size_bytes: number | null }
+  interface Agency { id: string; name: string; ori: string | null; hasBilling: boolean; licenses: License[] }
+  interface Me { email: string; agencies: Agency[] }
 
-  const labels: Record<string, string> = JSON.parse(document.getElementById('builds')?.dataset.labels ?? '{}');
+  const planNames: Record<string, string> = JSON.parse(document.getElementById('agencies')?.dataset.plans ?? '{}');
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const showError = (msg: string) => { $('error').textContent = msg; $('error').hidden = false; };
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '');
 
-  const statusText: Record<string, string> = {
-    active: 'Active', trialing: 'Trial', past_due: 'Payment overdue', unpaid: 'Unpaid',
-    canceled: 'Cancelled', incomplete: 'Awaiting payment', incomplete_expired: 'Expired',
-    paused: 'Paused', refunded: 'Refunded', disputed: 'Under review',
-  };
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-  const fmtSize = (b: number | null) => (b ? `${(b / 1048576).toFixed(0)} MB` : '');
+  const kindLabel = { subscription: 'Annual', term: 'Annual', perpetual: 'Perpetual', pilot: 'Pilot' } as const;
 
-  function renderLicense(me: Me) {
-    $('who').textContent = `Signed in as ${me.email}`;
-    const lic = me.license;
-    $('plan').textContent = lic?.plan ? lic.plan[0]!.toUpperCase() + lic.plan.slice(1) : 'None';
-    $('status').textContent = lic ? statusText[lic.status] ?? lic.status : 'No license';
-    if (lic?.current_period_end && lic.plan !== 'lifetime') {
-      $('renew-row').hidden = false;
-      $('renew-label').textContent = lic.cancel_at_period_end ? 'Access ends' : 'Renews';
-      $('renew').textContent = fmtDate(lic.current_period_end);
-    }
-    $('portal').hidden = !me.hasBillingAccount;
-    $('buy').hidden = me.hasAccess;
-    $('dl-locked').hidden = me.hasAccess;
+  function statusOf(l: License): { text: string; tone: 'on' | 'warn' | 'off' } {
+    if (l.status === 'revoked') return { text: 'Revoked', tone: 'off' };
+    if (!l.active) return { text: l.kind === 'subscription' ? (l.status === 'canceled' ? 'Ended' : 'Inactive') : 'Expired', tone: 'off' };
+    if (l.status === 'past_due') return { text: 'Payment overdue', tone: 'warn' };
+    if (l.kind === 'subscription' && l.cancelAtPeriodEnd) return { text: 'Ending', tone: 'warn' };
+    return { text: 'Active', tone: 'on' };
   }
 
-  async function renderBuilds(enabled: boolean) {
-    const { releases } = await api<{ releases: Release[] }>('/api/releases');
-    $('dl-empty').hidden = releases.length > 0;
-    const list = $('builds');
-    const tpl = $<HTMLTemplateElement>('build-tpl');
-    list.replaceChildren();
-    for (const r of releases) {
-      const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
-      li.querySelector('.b-name')!.textContent = labels[r.platform] ?? r.platform;
-      li.querySelector('.b-meta')!.textContent = [`Version ${r.version}`, fmtSize(r.size_bytes)].filter(Boolean).join(', ');
-      const btn = li.querySelector('button')!;
-      btn.disabled = !enabled;
-      btn.addEventListener('click', async () => {
-        btn.setAttribute('aria-busy', 'true');
-        try {
-          const dl = await api<{ url: string }>(`/api/download?platform=${encodeURIComponent(r.platform)}`);
-          window.location.assign(dl.url);
-        } catch (e) {
-          showError(e instanceof Error ? e.message : 'Download could not start.');
-        } finally {
-          btn.removeAttribute('aria-busy');
-        }
-      });
-      list.append(li);
+  function datesOf(l: License): string {
+    switch (l.kind) {
+      case 'subscription': return l.renewsAt ? `${l.cancelAtPeriodEnd ? 'Ends' : 'Renews'} ${fmt(l.renewsAt)}` : '';
+      case 'term': return l.expiresAt ? `Paid through ${fmt(l.expiresAt)}` : '';
+      case 'pilot': return l.expiresAt ? `Pilot ends ${fmt(l.expiresAt)}` : '';
+      case 'perpetual': {
+        if (!l.maintenanceUntil) return 'No maintenance';
+        const current = new Date(l.maintenanceUntil) > new Date();
+        return `${current ? 'Updates through' : 'Updates ended'} ${fmt(l.maintenanceUntil)}`;
+      }
     }
+  }
+
+  function cell(tr: HTMLTableRowElement, cls = '') {
+    const td = document.createElement('td');
+    if (cls) td.className = cls;
+    tr.append(td);
+    return td;
+  }
+
+  function renderAgency(a: Agency) {
+    const node = ($<HTMLTemplateElement>('agencyTpl').content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+    node.querySelector('.a-name')!.textContent = a.name;
+    node.querySelector('.a-ori')!.textContent = a.ori ? `ORI ${a.ori}` : '';
+    const billing = node.querySelector<HTMLButtonElement>('.a-billing')!;
+    billing.hidden = !a.hasBilling;
+    billing.addEventListener('click', async () => {
+      billing.setAttribute('aria-busy', 'true');
+      try {
+        const { url } = await api<{ url: string }>('/api/portal', { method: 'POST', body: JSON.stringify({ agencyId: a.id }) });
+        location.assign(url);
+      } catch (e) {
+        billing.removeAttribute('aria-busy');
+        showError(e instanceof Error ? e.message : 'Billing couldn’t open.');
+      }
+    });
+
+    const tbody = node.querySelector('tbody')!;
+    node.querySelector<HTMLElement>('.a-empty')!.hidden = a.licenses.length > 0;
+    node.querySelector<HTMLElement>('table')!.hidden = a.licenses.length === 0;
+
+    for (const l of a.licenses) {
+      const tr = document.createElement('tr');
+      const plan = cell(tr);
+      plan.innerHTML = '<strong></strong><div class="muted small"></div>';
+      plan.querySelector('strong')!.textContent = planNames[l.plan] ?? l.plan;
+      plan.querySelector('div')!.textContent = kindLabel[l.kind];
+      cell(tr).textContent = String(l.seats);
+      const st = statusOf(l);
+      const pill = document.createElement('span');
+      pill.className = `pill ${st.tone}`;
+      pill.textContent = st.text;
+      cell(tr).append(pill);
+      cell(tr, 'muted small').textContent = datesOf(l);
+      tbody.append(tr);
+
+      const keyRow = document.createElement('tr');
+      const keyCell = cell(keyRow, 'k');
+      keyCell.colSpan = 4;
+      keyCell.innerHTML = '<span class="key"><span class="muted">License key</span> <code></code> <button type="button" class="copy-btn">Copy</button></span>';
+      keyCell.querySelector('code')!.textContent = l.key;
+      const copy = keyCell.querySelector<HTMLButtonElement>('.copy-btn')!;
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(l.key); copy.textContent = 'Copied'; }
+        catch { copy.textContent = 'Select and copy'; }
+        setTimeout(() => (copy.textContent = 'Copy'), 2000);
+      });
+      tbody.append(keyRow);
+    }
+    $('agencies').append(node);
   }
 
   async function main() {
     if (!authConfigured) return showError('Sign-in isn’t connected yet. See docs/SETUP.md.');
-    const session = await getSession();
-    if (!session) return location.replace('/login/?next=%2Faccount%2F');
-
-    let me = await api<Me>('/api/me');
-    const justPaid = new URLSearchParams(location.search).get('checkout') === 'success';
-    if (justPaid && !me.hasAccess) {
-      // The Stripe webhook usually lands within seconds of the redirect.
-      $('confirming').hidden = false;
-      for (let i = 0; i < 10 && !me.hasAccess; i++) {
-        await sleep(2000);
-        me = await api<Me>('/api/me');
-      }
-      $('confirming').hidden = true;
-      if (!me.hasAccess) showError('Your payment went through but the license hasn’t activated yet. Refresh in a minute, or contact support if it persists.');
-    }
-    if (justPaid && me.hasAccess) $('activated').hidden = false;
-    if (justPaid) history.replaceState(null, '', '/account/');
-
-    renderLicense(me);
-    await renderBuilds(me.hasAccess);
+    if (!(await getSession())) return location.replace('/login/?next=%2Faccount%2F');
+    const me = await api<Me>('/api/me');
+    $('who').textContent = `Signed in as ${me.email}`;
+    if (me.agencies.length === 0) $('noAgency').hidden = false;
+    me.agencies.forEach(renderAgency);
   }
 
-  $('portal').addEventListener('click', async () => {
-    $('portal').setAttribute('aria-busy', 'true');
+  $('vendor').addEventListener('click', async () => {
     try {
-      const { url } = await api<{ url: string }>('/api/portal', { method: 'POST' });
-      window.location.assign(url);
+      const { url } = await api<{ url: string }>('/api/resource?name=vendor-packet');
+      location.assign(url);
     } catch (e) {
-      $('portal').removeAttribute('aria-busy');
-      showError(e instanceof Error ? e.message : 'Billing could not open.');
+      showError(e instanceof Error ? e.message : 'The vendor packet couldn’t be downloaded.');
     }
   });
 
@@ -171,5 +170,5 @@ import { platformLabels } from '../config/site';
     location.replace('/');
   });
 
-  main().catch((e) => showError(e instanceof Error ? e.message : 'Your account could not load.'));
+  main().catch((e) => showError(e instanceof Error ? e.message : 'Your account couldn’t load.'));
 </script>

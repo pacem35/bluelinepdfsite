@@ -16,13 +16,14 @@
     "run_worker_first": ["/api/*"]
   },
   "observability": { "enabled": true },
+  // The private bucket holding installers and agency documents. Create it before the first deploy.
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "blueline-installers" }],
   // Non-secret settings. Secrets (keys) are set with `wrangler secret put` or in the dashboard.
+  // Stripe prices are not configured here: the webhook reads each Price's lookup key (see docs/SETUP.md).
   "vars": {
     "SITE_URL": "http://localhost:8787",
     "R2_BUCKET": "blueline-installers",
     "DOWNLOAD_URL_TTL_SECONDS": "300",
-    "STRIPE_PRICE_MONTHLY": "",
-    "STRIPE_PRICE_YEARLY": "",
-    "STRIPE_PRICE_LIFETIME": ""
+    "DEFAULT_PLATFORM": "windows"
   }
 }

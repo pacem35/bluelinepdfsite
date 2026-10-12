@@ -1,68 +1,265 @@
 ---
 import Base from '../layouts/Base.astro';
-import ProofSheet from '../components/ProofSheet.astro';
-import Plans from '../components/Plans.astro';
-import { capabilities, site } from '../config/site';
+import Icon from '../components/Icon.astro';
+import { plans } from '../config/site';
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 <Base>
+  <!-- HERO -->
   <section class="hero">
     <div class="wrap hero-grid">
-      <div class="hero-copy">
-        <h1>Every PDF, ready to send.</h1>
-        <p class="lede">{site.name} is a desktop editor for the documents you sign, fix and pass along: contracts, forms, statements, scans.</p>
-        <div class="actions">
-          <a class="btn" href="/pricing/">See plans</a>
-          <a class="btn secondary" href="/login/" data-auth="signed-out">Sign in</a>
-          <a class="btn secondary" href="/account/" data-auth="signed-in" hidden>Download</a>
+      <div class="reveal">
+        <div class="eyebrow"><span class="dot"></span> Offline-first · No cloud uploads</div>
+        <h1>The PDF &amp; records tool <span class="grad">built for police agencies.</span></h1>
+        <p class="lead">Redact, log and release without sending a single page to the cloud. Designed for public records releases, discovery and internal records work, and built to run inside a CJIS-compliant environment.</p>
+        <div class="hero-actions">
+          <a href="/api/download" class="btn btn-gold"><Icon name="download" stroke={2.2} /> Download Free Officer Edition</a>
+          <a href="#contact" class="btn btn-ghost">Request a quote</a>
+        </div>
+        <div class="hero-note">
+          <span><span style="color:var(--green)"><Icon name="check" size={14} stroke={3} /></span> No account required</span>
+          <span><span style="color:var(--green)"><Icon name="check" size={14} stroke={3} /></span> Free 60–90 day agency pilots</span>
         </div>
       </div>
-      <ProofSheet />
-    </div>
-  </section>
 
-  <section class="what wrap" aria-labelledby="what-h">
-    <h2 id="what-h">What it does</h2>
-    <dl class="caps">
-      {capabilities.map((c) => (
-        <div>
-          <dt>{c.verb}</dt>
-          <dd>{c.detail}</dd>
+      <div class="reveal" style="position:relative">
+        <div class="mock" aria-hidden="true">
+          <div class="mock-bar"><i></i><i></i><i></i><span class="title">incident_report_release.pdf — Blueline</span></div>
+          <div class="mock-body">
+            <div class="page">
+              <h4>INCIDENT REPORT — RELEASE COPY</h4>
+              <div class="ln m"></div>
+              <div>Reporting party: <span class="redact" data-code="EX-PII" style="width:92px"></span></div>
+              <div>DOB: <span class="redact" data-code="EX-PII" style="width:58px"></span> &nbsp; Phone: <span class="redact" style="width:64px"></span></div>
+              <div class="ln"></div><div class="ln s"></div>
+              <div>Juvenile involved: <span class="redact" data-code="EX-JUV" style="width:84px"></span></div>
+              <div class="ln m"></div><div class="ln"></div>
+              <div>Informant: <span class="redact" data-code="EX-CI" style="width:100px"></span></div>
+              <div class="ln s"></div><div class="ln m"></div>
+            </div>
+            <div class="side">
+              <h5>Release log</h5>
+              <div class="log-item"><b>EX-PII ×3</b>Personal identifiers</div>
+              <div class="log-item"><b>EX-JUV ×1</b>Juvenile record</div>
+              <div class="log-item"><b>EX-CI ×1</b>Confidential source</div>
+              <h5 style="margin-top:14px">Export</h5>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span class="tag" style="margin:0">PDF</span><span class="tag" style="margin:0">CSV</span><span class="tag" style="margin:0">JSON</span>
+              </div>
+            </div>
+          </div>
         </div>
-      ))}
-    </dl>
+        <div class="floating" aria-hidden="true">
+          <span class="ok"><Icon name="check" size={14} stroke={3} /></span>
+          <div><strong style="display:block;font-size:.8rem">Hidden data removed</strong><span style="color:var(--muted)">Audit trail embedded</span></div>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="pricing wrap" aria-labelledby="pricing-h">
-    <div class="section-head">
-      <h2 id="pricing-h">Plans</h2>
-      <p>Same software on every plan. Pick how you'd like to pay.</p>
+  <!-- TRUST STRIP -->
+  <div class="strip">
+    <div class="wrap strip-inner" style="padding-left:24px;padding-right:24px">
+      <div class="strip-item"><span class="ic"><Icon name="lock" /></span><div><strong>Stays on your machine</strong>Documents never uploaded</div></div>
+      <div class="strip-item"><span class="ic"><Icon name="shield" /></span><div><strong>CJIS-ready</strong>Built for secure environments</div></div>
+      <div class="strip-item"><span class="ic"><Icon name="offline" /></span><div><strong>Air-gap friendly</strong>Offline signed licenses</div></div>
+      <div class="strip-item"><span class="ic"><Icon name="user" /></span><div><strong>Built by an officer</strong>For real records workflows</div></div>
     </div>
-    <Plans />
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Built for Records Units &amp; IT</div>
+        <h2>Everything a release needs, nothing it doesn't.</h2>
+        <p>From the first redaction to the final release packet, Blueline keeps every action defensible and every document local.</p>
+      </div>
+      <div class="features">
+        <article class="card reveal">
+          <span class="ic"><Icon name="redact" size={22} /></span>
+          <h3>Defensible Redactions</h3>
+          <p>Apply redactions with exact exemption codes and basis justifications. Blueline automatically outputs a complete release log in PDF, CSV, or JSON.</p>
+          <span class="tag">Exemption codes · Release logs</span>
+        </article>
+        <article class="card reveal">
+          <span class="ic"><Icon name="form" size={22} /></span>
+          <h3>Form Building &amp; Filling</h3>
+          <p>Fill existing fillable PDFs, build new forms, and import data from CSV or JSON. An agency forms library is on the roadmap.</p>
+          <span class="tag">CSV / JSON import</span>
+        </article>
+        <article class="card reveal">
+          <span class="ic"><Icon name="audit" size={22} /></span>
+          <h3>Embedded Audit Trails</h3>
+          <p>Generate a per-document audit trail that embeds the local Windows user and computer information directly into the PDF metadata.</p>
+          <span class="tag">Per-document history</span>
+        </article>
+        <article class="card reveal">
+          <span class="ic"><Icon name="lock" size={22} /></span>
+          <h3>Offline-First Security</h3>
+          <p>Documents never leave your machine and no account is required. A periodic license check sends only a license ID — never documents or user names. Offline signed licenses are available for air-gapped environments.</p>
+          <span class="tag">No cloud · No account</span>
+        </article>
+      </div>
+    </div>
   </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <div class="kicker">Pricing</div>
+        <h2>Simple pricing for agencies of any size.</h2>
+        <p>Start free as an officer. Scale up when your records unit needs redaction and release tools.</p>
+      </div>
+
+      <div class="plans">
+        {plans.map((p) => (
+          <div class:list={['plan', 'reveal', { featured: 'featured' in p && p.featured }]}>
+            {'featured' in p && p.featured && <span class="badge">Recommended</span>}
+            <h3>{p.name}</h3>
+            <div class="for">{p.for}</div>
+            <div class="price"><b>{p.price}</b><span>{p.unit}</span></div>
+            <ul>
+              {p.features.map((f) => (
+                <li><Icon name="check" size={14} stroke={3} />{f}</li>
+              ))}
+            </ul>
+            <a href={p.cta.href} class={`btn btn-${p.cta.style}`}>{p.cta.label}</a>
+          </div>
+        ))}
+      </div>
+
+      <div class="perpetual reveal">
+        <div>
+          <h4>Need a one-time purchase? Perpetual licenses available.</h4>
+          <p>Features are locked at the purchased version, with updates included while maintenance is current.</p>
+        </div>
+        <div class="p-price">2× yearly price + 20% annual maintenance</div>
+      </div>
+      <p class="terms">Agency tiers are billed annually in advance. Net 30 invoicing available.</p>
+    </div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section id="resources">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="kicker">Resources &amp; Documentation</div>
+        <h2>Everything your IT and budget folks will ask for.</h2>
+      </div>
+      <div class="res">
+        <div class="card reveal">
+          <span class="ic"><Icon name="shieldCheck" size={22} /></span>
+          <div>
+            <h3>Security &amp; CJIS Summary</h3>
+            <p>Download our live checks and summary PDF for agency IT review.</p>
+            <a href="/api/resource?name=security-summary" class="link">Download PDF <span>→</span></a>
+          </div>
+        </div>
+        <div class="card reveal">
+          <span class="ic"><Icon name="box" size={22} /></span>
+          <div>
+            <h3>Vendor Packet</h3>
+            <p>Our W-9, EULA, and a one-page quote template for budget approvals.</p>
+            <button type="button" class="link" id="vendorPacket">Download ZIP <span>→</span></button>
+            <p class="res-msg" id="vendorMsg" role="alert" hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" style="background:var(--bg-2);border-top:1px solid var(--border)">
+    <div class="wrap contact-grid">
+      <div class="reveal">
+        <div class="kicker">Pilot or Quote</div>
+        <h2>Try Blueline before budget season.</h2>
+        <p style="color:var(--muted);margin-top:14px;font-size:1.05rem">We offer free 60–90 day pilots for agencies. Founding agencies get 40% off their first year.</p>
+        <div class="steps">
+          <div class="step"><span class="n">1</span><div><strong>Send a request</strong><p>Tell us about your agency and how many seats you need.</p></div></div>
+          <div class="step"><span class="n">2</span><div><strong>Hear back within two business days</strong><p>We'll set up your pilot licenses or send a formal quote.</p></div></div>
+          <div class="step"><span class="n">3</span><div><strong>Run your real workflow</strong><p>Test redaction and release on your own records, entirely offline.</p></div></div>
+        </div>
+      </div>
+
+      <form id="quoteForm" class="reveal" novalidate>
+        <div class="row">
+          <div><label for="agency">Agency name</label><input id="agency" name="agency" placeholder="City Police Department" autocomplete="organization" required></div>
+          <div><label for="ori">Agency ORI</label><input id="ori" name="ori" placeholder="XX0000000" maxlength="9" autocapitalize="characters"></div>
+        </div>
+        <div class="row">
+          <div><label for="seats">Requested seats</label><input id="seats" name="seats" type="number" min="1" step="1" inputmode="numeric" placeholder="5"></div>
+          <div><label for="email">Contact email</label><input id="email" name="email" type="email" placeholder="records@agency.gov" autocomplete="email" required></div>
+        </div>
+        <div><label for="contacts">Records &amp; IT contacts</label><textarea id="contacts" name="contacts" maxlength="4000" placeholder="Names, roles, and phone numbers for your records and IT contacts"></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+        {turnstileSiteKey && <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>}
+        <button class="btn btn-gold" type="submit" id="quoteSubmit">Submit request</button>
+        <div class="form-msg err" id="formErr" role="alert" hidden></div>
+        <div class="form-msg ok" id="formOk" role="status" hidden>Thanks — we'll be in touch within two business days.</div>
+      </form>
+    </div>
+  </section>
+  {turnstileSiteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 </Base>
 
-<style>
-  .hero { padding: clamp(3rem, 8vw, 6rem) 0 clamp(3rem, 7vw, 5.5rem); border-bottom: 1px solid var(--rule); }
-  .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
-  .hero h1 { font-variation-settings: 'wdth' 125; font-weight: 800; max-width: 11ch; }
-  .lede { font-size: var(--t-2); color: var(--muted); margin: 1.4rem 0 2rem; max-width: 34ch; line-height: 1.45; }
-  .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+<script>
+  import { api, ApiError } from '../lib/api';
+  import { getSession } from '../lib/supabase';
 
-  .what { padding-top: 5rem; }
-  .caps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 3.5rem; margin: 2rem 0 0; }
-  .caps > div { display: grid; grid-template-columns: 8.5rem 1fr; gap: 1rem; padding: 1.1rem 0; border-top: 1px solid var(--rule); }
-  .caps dt { font-weight: 700; font-variation-settings: 'wdth' 118; color: var(--blue); font-size: var(--t-2); line-height: 1.2; }
-  .caps dd { margin: 0; color: var(--ink); }
+  // Quote / pilot request
+  const form = document.getElementById('quoteForm') as HTMLFormElement;
+  const submit = document.getElementById('quoteSubmit') as HTMLButtonElement;
+  const err = document.getElementById('formErr')!;
+  const ok = document.getElementById('formOk')!;
 
-  .pricing { padding-top: 5.5rem; }
-  .section-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem 2rem; margin-bottom: 1.6rem; }
-  .section-head p { color: var(--muted); margin: 0; }
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.hidden = true;
+    ok.hidden = true;
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    if (!data.agency?.trim()) { err.textContent = 'Enter your agency name.'; err.hidden = false; return; }
+    if (!(form.elements.namedItem('email') as HTMLInputElement).checkValidity() || !data.email) {
+      err.textContent = 'Enter a contact email we can reply to.'; err.hidden = false; return;
+    }
+    submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
+    submit.textContent = 'Sending…';
+    try {
+      await api('/api/quote', {
+        method: 'POST',
+        body: JSON.stringify({ ...data, turnstileToken: data['cf-turnstile-response'] }),
+      });
+      form.reset();
+      ok.hidden = false;
+    } catch (e2) {
+      err.textContent = e2 instanceof ApiError ? e2.message : 'Your request didn’t send. Check your connection and try again.';
+      err.hidden = false;
+      (window as any).turnstile?.reset?.();
+    } finally {
+      submit.disabled = false;
+      submit.removeAttribute('aria-busy');
+      submit.textContent = 'Submit request';
+    }
+  });
 
-  @media (max-width: 900px) {
-    .hero-grid { grid-template-columns: 1fr; }
-    .caps { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .caps > div { grid-template-columns: 1fr; gap: 0.2rem; }
-  }
-</style>
+  // Vendor packet: handed out to signed-in contacts because it carries the W-9.
+  const vendorBtn = document.getElementById('vendorPacket') as HTMLButtonElement;
+  const vendorMsg = document.getElementById('vendorMsg')!;
+  vendorBtn.addEventListener('click', async () => {
+    vendorMsg.hidden = true;
+    if (!(await getSession())) {
+      location.assign('/login/?next=%2F%23resources&reason=vendor');
+      return;
+    }
+    try {
+      const { url } = await api<{ url: string }>('/api/resource?name=vendor-packet');
+      location.assign(url);
+    } catch (e) {
+      vendorMsg.textContent = e instanceof Error ? e.message : 'The vendor packet couldn’t be downloaded.';
+      vendorMsg.hidden = false;
+    }
+  });
+</script>

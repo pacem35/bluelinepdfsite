@@ -10,7 +10,8 @@
     "deploy": "npm run build && wrangler deploy",
     "typecheck": "astro check && tsc -p worker/tsconfig.json --noEmit",
     "test": "vitest run",
-    "release:prepare": "node scripts/prepare-release.mjs"
+    "release:prepare": "node scripts/prepare-release.mjs",
+    "agency:add": "node --env-file=.dev.vars scripts/agency-add.mjs"
   },
   "engines": {
     "node": ">=20"

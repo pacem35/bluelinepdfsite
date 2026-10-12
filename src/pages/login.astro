@@ -2,45 +2,34 @@
 import Base from '../layouts/Base.astro';
 ---
 <Base title="Sign in" noindex>
-  <div class="narrow auth">
-    <h1 id="heading">Sign in</h1>
-    <p class="sub" id="sub">Use the email you bought with to reach your downloads and billing.</p>
+  <section class="page-wrap narrow auth">
+    <div class="wrap">
+      <h1 id="heading">Sign in</h1>
+      <p class="page-lead" id="sub">For agency contacts: license keys, invoices and the vendor packet. The Officer Edition doesn’t need an account.</p>
 
-    <p class="notice error" id="error" role="alert" hidden></p>
-    <p class="notice ok" id="ok" role="status" hidden></p>
-    <p class="notice error" id="unconfigured" hidden>
-      Sign-in isn't connected yet. Set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY and rebuild.
-    </p>
+      <div class="panel">
+        <div class="form-msg info" id="vendorNote" hidden>Sign in to download the vendor packet. Any work email works; you don’t need a license.</div>
+        <div class="form-msg err" id="unconfigured" hidden>Sign-in isn’t connected yet. Set PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY and rebuild.</div>
+        <div class="form-msg err" id="error" role="alert" hidden></div>
+        <div class="form-msg ok" id="ok" role="status" hidden></div>
 
-    <form id="form" novalidate>
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" required />
+        <form id="form" novalidate style="display:grid;gap:16px">
+          <div><label for="email">Work email</label><input id="email" name="email" type="email" autocomplete="email" placeholder="records@agency.gov" required></div>
+          <div><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required></div>
+          <button class="btn btn-gold" id="submit" type="submit">Sign in</button>
+        </form>
+
+        <div class="alt">
+          <button class="linkish" id="magic" type="button">Email me a sign-in link instead</button>
+          <span><span id="switch-label">New here?</span>{' '}<button class="linkish" id="switch" type="button">Create an account</button></span>
+        </div>
       </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required />
-      </div>
-      <button class="btn full" id="submit" type="submit">Sign in</button>
-    </form>
-
-    <div class="alt">
-      <button class="linkish" id="magic" type="button">Email me a sign-in link instead</button>
-      <p id="switch-row">
-        <span id="switch-label">New to Blueline PDF?</span>{' '}
-        <button class="linkish" id="switch" type="button">Create an account</button>
-      </p>
     </div>
-  </div>
+  </section>
 </Base>
 
 <style>
-  .auth { padding: 4rem 0 2rem; }
-  .sub { color: var(--muted); margin: 0.8rem 0 2rem; }
-  .full { width: 100%; margin-top: 0.4rem; }
-  .alt { margin-top: 1.6rem; display: grid; gap: 0.6rem; }
-  .alt p { margin: 0; color: var(--muted); }
-  .linkish { font: inherit; color: var(--blue); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 0.18em; justify-self: start; }
+  .panel .form-msg { margin-bottom: 16px; }
 </style>
 
 <script>
@@ -55,29 +44,24 @@ import Base from '../layouts/Base.astro';
   const okBox = $('ok');
 
   const params = new URLSearchParams(location.search);
-  // Only same-site relative paths are allowed as a post-login destination.
+  // Only same-site relative paths are allowed as the post-login destination.
   const rawNext = params.get('next') ?? '/account/';
   const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/account/';
-  const plan = params.get('plan');
-  const destination = plan ? `${next}${next.includes('?') ? '&' : '?'}plan=${encodeURIComponent(plan)}` : next;
+  if (params.get('reason') === 'vendor') $('vendorNote').hidden = false;
 
   let mode: 'signin' | 'signup' = params.get('mode') === 'signup' ? 'signup' : 'signin';
 
   function render() {
     const signup = mode === 'signup';
-    $('heading').textContent = signup ? 'Create your account' : 'Sign in';
-    $('sub').textContent = signup
-      ? 'You’ll use this account to download Blueline PDF and manage billing.'
-      : 'Use the email you bought with to reach your downloads and billing.';
+    $('heading').textContent = signup ? 'Create an account' : 'Sign in';
     submit.textContent = signup ? 'Create account' : 'Sign in';
     password.autocomplete = signup ? 'new-password' : 'current-password';
-    $('switch-label').textContent = signup ? 'Already have an account?' : 'New to Blueline PDF?';
+    $('switch-label').textContent = signup ? 'Already have an account?' : 'New here?';
     $('switch').textContent = signup ? 'Sign in' : 'Create an account';
   }
 
   function show(box: HTMLElement, msg: string) {
-    errorBox.hidden = true;
-    okBox.hidden = true;
+    errorBox.hidden = okBox.hidden = true;
     box.textContent = msg;
     box.hidden = false;
   }
@@ -89,12 +73,10 @@ import Base from '../layouts/Base.astro';
 
   if (!authConfigured) {
     $('unconfigured').hidden = false;
-    form.querySelectorAll('input,button').forEach((el) => ((el as HTMLButtonElement).disabled = true));
+    document.querySelectorAll<HTMLButtonElement | HTMLInputElement>('.panel input, .panel button').forEach((el) => (el.disabled = true));
+  } else {
+    supabase.auth.getSession().then(({ data }) => data.session && location.replace(next));
   }
-
-  supabase.auth.getSession().then(({ data }) => {
-    if (data.session) location.replace(destination);
-  });
 
   $('switch').addEventListener('click', () => {
     mode = mode === 'signin' ? 'signup' : 'signin';
@@ -111,15 +93,15 @@ import Base from '../layouts/Base.astro';
       if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value });
         if (error) throw error;
-        location.replace(destination);
+        location.replace(next);
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: email.value,
           password: password.value,
-          options: { emailRedirectTo: new URL(destination, location.origin).href },
+          options: { emailRedirectTo: new URL(next, location.origin).href },
         });
         if (error) throw error;
-        if (data.session) location.replace(destination);
+        if (data.session) location.replace(next);
         else show(okBox, `We sent a confirmation link to ${email.value}. Open it to finish creating your account.`);
       }
     } catch (err) {
@@ -133,7 +115,7 @@ import Base from '../layouts/Base.astro';
     if (!email.value || !email.checkValidity()) return show(errorBox, 'Enter your email first, then ask for a link.');
     const { error } = await supabase.auth.signInWithOtp({
       email: email.value,
-      options: { emailRedirectTo: new URL(destination, location.origin).href },
+      options: { emailRedirectTo: new URL(next, location.origin).href },
     });
     if (error) show(errorBox, error.message);
     else show(okBox, `Sign-in link sent to ${email.value}. It works once and expires in an hour.`);

@@ -1,3 +1,4 @@
 User-agent: *
 Disallow: /account/
+Disallow: /login/
 Disallow: /api/

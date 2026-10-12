@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Logo from '../components/Logo.astro';
+import Icon from '../components/Icon.astro';
 import { site } from '../config/site';
 
 interface Props {
@@ -8,67 +9,116 @@ interface Props {
   description?: string;
   noindex?: boolean;
 }
-const { title, description = site.tagline, noindex = false } = Astro.props;
-const fullTitle = title ? `${title} | ${site.name}` : `${site.name} — ${site.tagline}`;
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
-const current = (href: string) => (path === href ? 'page' : undefined);
+const { title, description = site.description, noindex = false } = Astro.props;
+const fullTitle = title ? `${title} | ${site.name}` : site.title;
+// Section links work from every page.
+const onHome = Astro.url.pathname === '/';
+const sec = (id: string) => (onHome ? `#${id}` : `/#${id}`);
 ---
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script is:inline>document.documentElement.classList.add('js')</script>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
   </head>
   <body>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="brand" href="/"><Logo />{site.name}</a>
-        <nav class="nav" aria-label="Main">
-          <a href="/pricing/" aria-current={current('/pricing')}>Pricing</a>
-          <a href="/login/" data-auth="signed-out" aria-current={current('/login')}>Sign in</a>
-          <a href="/account/" data-auth="signed-in" hidden aria-current={current('/account')}>Your account</a>
+    <div class="announce">
+      <strong>{site.announcement.lead}</strong> {site.announcement.text}
+      <a href={sec('contact')}>Learn more →</a>
+    </div>
+
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <Logo />
+        <nav class="nav-links" id="navLinks" aria-label="Main">
+          <a href={sec('features')}>Features</a>
+          <a href={sec('pricing')}>Pricing</a>
+          <a href={sec('resources')}>Resources</a>
+          <a href={sec('contact')}>Contact</a>
+          <a href="/login/" data-auth="signed-out">Sign in</a>
+          <a href="/account/" data-auth="signed-in" hidden>Account</a>
         </nav>
+        <div class="nav-cta">
+          <a href={sec('contact')} class="btn btn-ghost btn-sm">Request a quote</a>
+          <a href="/api/download" class="btn btn-gold btn-sm">Free download</a>
+          <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+            <Icon name="menu" size={20} />
+          </button>
+        </div>
       </div>
     </header>
 
-    <main id="main">
+    <main>
       <slot />
     </main>
 
-    <footer class="site-footer">
+    <footer>
       <div class="wrap">
-        <span>© {new Date().getFullYear()} {site.company}</span>
-        <nav aria-label="Footer">
-          <a href="/pricing/">Pricing</a>
-          <a href="/terms/">Terms</a>
-          <a href="/privacy/">Privacy</a>
-          <a href={`mailto:${site.supportEmail}`}>Support</a>
-        </nav>
+        <div class="foot">
+          <div>
+            <Logo />
+            <p>Blueline is developed and maintained by a serving police officer, so it's built around the realities of local records workflows.</p>
+          </div>
+          <nav class="foot-links" aria-label="Footer">
+            <a href={sec('features')}>Features</a><a href={sec('pricing')}>Pricing</a><a href={sec('resources')}>Resources</a><a href={sec('contact')}>Contact</a>
+            <a href="/terms/">Terms</a><a href="/privacy/">Privacy</a>
+          </nav>
+        </div>
+        <div class="copy">© {new Date().getFullYear()} {site.company}. All rights reserved.</div>
       </div>
     </footer>
 
     <script>
       import { supabase, authConfigured } from '../lib/supabase';
-      const toggle = (signedIn: boolean) => {
+
+      // Mobile menu
+      const menuBtn = document.getElementById('menuBtn')!;
+      const navLinks = document.getElementById('navLinks')!;
+      const setOpen = (open: boolean) => {
+        navLinks.classList.toggle('open', open);
+        menuBtn.setAttribute('aria-expanded', String(open));
+        menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      };
+      menuBtn.addEventListener('click', () => setOpen(!navLinks.classList.contains('open')));
+      navLinks.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+
+      // Scroll reveal
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        }),
+        { threshold: 0.12 },
+      );
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+      // Card spotlight follows cursor
+      document.querySelectorAll<HTMLElement>('.card').forEach((card) => {
+        card.addEventListener('mousemove', (e) => {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+          card.style.setProperty('--my', `${e.clientY - r.top}px`);
+        });
+      });
+
+      // Signed-in state in the nav
+      const toggle = (signedIn: boolean) =>
         document.querySelectorAll<HTMLElement>('[data-auth]').forEach((el) => {
           el.hidden = (el.dataset.auth === 'signed-in') !== signedIn;
         });
-      };
       if (authConfigured) {
         supabase.auth.getSession().then(({ data }) => toggle(Boolean(data.session)));
-        supabase.auth.onAuthStateChange((_e, session) => toggle(Boolean(session)));
+        supabase.auth.onAuthStateChange((_e, s) => toggle(Boolean(s)));
       }
     </script>
   </body>

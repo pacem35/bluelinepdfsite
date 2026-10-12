@@ -1,54 +1,75 @@
-// Everything a non-developer is likely to change lives here.
+// Copy and prices that change without touching layout. Prices here are display only:
+// what agencies are charged is whatever you put on the Stripe invoice.
 
 export const site = {
-  name: 'Blueline PDF',
-  tagline: 'Read, edit, sign and assemble PDFs on your own desktop.',
-  supportEmail: 'support@example.com', // TODO: real support address
+  name: 'Blueline',
   company: 'Blueline PDF Software',
+  title: 'Blueline – PDF & Records Software for Police Agencies',
+  description: 'Offline-first PDF redaction, forms, and records software built for police agencies.',
+  contactEmail: 'support@example.com', // TODO: real address
+  announcement: {
+    lead: 'Founding Agency Offer:',
+    text: '40% off your first year when you join our pilot program.',
+  },
 };
 
-// Display copy for plans. Real prices are charged from the Stripe Price IDs configured in the Worker
-// (STRIPE_PRICE_MONTHLY / _YEARLY / _LIFETIME). Keep these labels in step with those prices.
-// TODO: replace the placeholder prices below with your launch prices.
+
 export const plans = [
   {
-    id: 'monthly',
-    name: 'Monthly',
-    price: '$9',
-    cadence: 'per month',
-    blurb: 'Every feature, cancel any time.',
+    id: 'officer',
+    name: 'Officer Edition',
+    for: 'For individual officers',
+    price: '$0',
+    unit: 'forever',
+    features: ['View & annotate', 'Fill & sign forms', 'Merge & print', 'OCR'],
+    cta: { label: 'Download free', href: '/api/download', style: 'ghost' },
   },
   {
-    id: 'yearly',
-    name: 'Yearly',
-    price: '$79',
-    cadence: 'per year',
-    blurb: 'Every feature, two months free compared with monthly.',
+    id: 'standard',
+    name: 'Agency Standard',
+    for: 'For departments that need redaction',
+    price: '$129',
+    unit: '/ seat / year',
     featured: true,
+    features: [
+      'Everything in Officer',
+      'Redaction with exemption codes & logs',
+      'Verification & hidden-data removal',
+      'Batch redaction, PDF/A',
+      'Certificate signing & audit trail',
+      'Email support',
+    ],
+    cta: { label: 'Request a quote', href: '/#contact', style: 'gold' },
   },
   {
-    id: 'lifetime',
-    name: 'Lifetime',
+    id: 'bundle',
+    name: 'Small Agency Bundle',
+    for: 'For departments with 10 or fewer users',
+    price: '$990',
+    unit: '/ year · up to 10 seats',
+    features: ['Agency Standard for 10 seats', 'Locked agency settings', 'Remote onboarding session'],
+    cta: { label: 'Request a quote', href: '/#contact', style: 'ghost' },
+  },
+  {
+    id: 'pro',
+    name: 'Records Pro',
+    for: 'For records units & larger agencies',
     price: '$199',
-    cadence: 'one payment',
-    blurb: 'Pay once and keep this major version for good.',
+    unit: '/ seat / year',
+    features: [
+      'Everything in Agency Standard',
+      'Records request tracker & release packet',
+      'Second-person review',
+      'Redaction presets',
+      'Custodian certification & retention labels',
+      'Priority support',
+    ],
+    cta: { label: 'Request a quote', href: '/#contact', style: 'ghost' },
   },
 ] as const;
 
-export type PlanId = (typeof plans)[number]['id'];
-
-// TODO: confirm each line matches what ships in 1.0.
-export const capabilities = [
-  { verb: 'Edit', detail: 'Change text and images in place, keeping the original fonts and layout.' },
-  { verb: 'Sign', detail: 'Add a drawn, typed or image signature and send a finished copy.' },
-  { verb: 'Assemble', detail: 'Merge, split, reorder and rotate pages by dragging thumbnails.' },
-  { verb: 'Mark up', detail: 'Highlight, comment and redact, then flatten for sharing.' },
-  { verb: 'Fill', detail: 'Complete and save PDF forms, including ones without form fields.' },
-  { verb: 'Convert', detail: 'Export to Word, images or plain text and back to PDF.' },
-];
-
-export const platformLabels: Record<string, string> = {
-  windows: 'Windows',
-  macos: 'macOS',
-  linux: 'Linux',
+export const planNames: Record<string, string> = {
+  standard: 'Agency Standard',
+  bundle: 'Small Agency Bundle',
+  pro: 'Records Pro',
 };

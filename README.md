@@ -1,32 +1,31 @@
-# Blueline PDF — website
+# Blueline — website
 
-Marketing site, accounts, billing and installer downloads for Blueline PDF.
+Marketing site, free Officer Edition download, agency quote requests, licenses and billing for
+Blueline, the offline-first PDF and records tool for police agencies.
 
 | Concern | Choice | Why |
 | --- | --- | --- |
-| Hosting | **Cloudflare Workers** (static assets + API in one Worker), deployed from this repo on every push | Free tier allows commercial use (Vercel's free Hobby plan doesn't). Static pages are served free and without limit; only `/api/*` calls count toward the 100k requests/day free allowance. Cloudflare now recommends Workers over Pages for new projects, with the same Git-connected deploys. |
-| Auth + database | **Supabase** | One service for sign-in (email + password, magic links) and Postgres. Clerk would still need a separate database for licenses. |
-| Billing | **Stripe** Checkout + Customer Portal + a webhook at `/api/stripe/webhook` | Stripe hosts the payment and billing pages; the webhook keeps each user's license in sync. |
-| Installers | **Cloudflare R2**, private bucket, presigned URLs that expire after 5 minutes | Same account as the site, 10 GB free storage and no egress fees, so downloads cost nothing. |
+| Hosting | **Cloudflare Workers** (static site + API in one Worker), deployed from this repo on every push | Free tier allows commercial use (Vercel's free Hobby plan doesn't). Static pages are served free and without limit; only `/api/*` calls count toward the 100k requests/day free allowance. Cloudflare recommends Workers over Pages for new projects, with the same Git-connected deploys. |
+| Auth + database | **Supabase** | Sign-in for agency contacts (password or emailed link) plus Postgres for agencies, licenses and quote requests. |
+| Billing | **Stripe** invoices (Net 30) and subscriptions, run from the Stripe dashboard; a webhook at `/api/stripe/webhook` turns paid invoices into licenses | Agencies buy on quotes and invoices, not card checkouts. Stripe's hosted invoice page accepts card or ACH. |
+| Installers | **Cloudflare R2**, private bucket, presigned URLs that expire after 5 minutes | Free Officer Edition downloads need no account but never expose the bucket. No egress fees. |
 
 ## How it fits together
 
 ```
-Browser ── static pages (Astro, ./dist) ─────────────── served by Cloudflare's asset layer
-   │
-   ├─ Supabase Auth (sign in, session token)
-   │
-   └─ /api/* ──► Worker (worker/index.ts)
-                   ├─ POST /api/checkout        → Stripe Checkout session
-                   ├─ POST /api/portal          → Stripe billing portal
-                   ├─ GET  /api/me              → license status
-                   ├─ GET  /api/releases        → latest build per platform
-                   ├─ GET  /api/download        → license check → 5-minute signed R2 URL
-                   └─ POST /api/stripe/webhook  → verifies signature → updates `entitlements`
+Visitor ── "Free download"  → GET /api/download        → newest Windows build → 302 to 5-minute signed R2 URL
+        ── quote/pilot form → POST /api/quote          → quote_requests table (+ optional Slack/Discord ping)
+        ── Security summary → GET /api/resource        → signed R2 URL
+Agency contact (signed in)
+        ── Account page     → GET /api/me              → their agencies, licenses and license keys
+        ── Vendor packet    → GET /api/resource        → signed R2 URL (sign-in required: it holds the W-9)
+        ── Invoices         → POST /api/portal         → Stripe billing portal
+You, in Stripe          → invoice / subscription paid → POST /api/stripe/webhook → licenses table
+You, for pilots         → npm run agency:add -- …                            → agency + pilot license
 ```
 
-The `entitlements` table in Supabase is the single source of truth for "may this person download?".
-Only the Worker writes to it (service-role key); browsers can only read their own row.
+Licenses are matched to Stripe by each Price's **lookup key** (`standard_annual`, `pro_perpetual`, `bundle_maintenance`, …).
+See [docs/SETUP.md](docs/SETUP.md#2-stripe-billing).
 
 ## Local development
 
@@ -35,25 +34,21 @@ npm install
 cp .env.example .env              # Supabase URL + anon/publishable key
 cp .dev.vars.example .dev.vars    # Worker secrets (Stripe, Supabase service key, R2)
 npm run preview                   # builds and serves site + API at http://localhost:8787
-stripe listen --forward-to localhost:8787/api/stripe/webhook   # in a second terminal
+stripe listen --forward-to localhost:8787/api/stripe/webhook   # second terminal
 ```
-
-`npm run dev` serves pages only (fast UI work, no `/api`).
 
 | Command | Does |
 | --- | --- |
 | `npm run typecheck` | Astro + Worker type checks |
-| `npm test` | Unit tests: webhook → license logic, signed URLs, access rules |
+| `npm test` | Unit tests: Stripe → license rules, quote validation, signed URLs |
 | `npm run build` | Static build to `dist/` |
-| `npm run release:prepare -- <file> <platform> <version>` | Prints the upload command and SQL to publish an installer |
-
-## Setup
-
-Account setup, keys and go-live steps: **[docs/SETUP.md](docs/SETUP.md)**.
+| `npm run agency:add -- …` | Add an agency and its contacts, optionally with a pilot license |
+| `npm run release:prepare -- <file> windows <version>` | Prints the upload command and SQL to publish an installer |
 
 ## Where to edit things
 
-- Prices shown, feature list, support email: `src/config/site.ts`
-- Charged prices: Stripe Price IDs in `wrangler.jsonc` → `vars`
+- Plan names, displayed prices, features, contact email, announcement bar: `src/config/site.ts`
+- Page copy: `src/pages/index.astro`
 - Colors and type: `src/styles/global.css`
+- Documents offered for download: `RESOURCES` in `worker/routes/download.ts`
 - Database schema: `supabase/migrations/`
