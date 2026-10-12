@@ -1,0 +1,175 @@
+---
+import Base from '../layouts/Base.astro';
+import { platformLabels } from '../config/site';
+---
+<Base title="Your account" noindex>
+  <div class="wrap account">
+    <header class="page-head">
+      <h1>Your account</h1>
+      <p id="who">Loading…</p>
+    </header>
+
+    <p class="notice" id="confirming" role="status" hidden>Payment received. Activating your license…</p>
+    <p class="notice ok" id="activated" role="status" hidden>Your license is active. Download below.</p>
+    <p class="notice error" id="error" role="alert" hidden></p>
+
+    <div class="cols">
+      <section aria-labelledby="dl-h" class="downloads">
+        <h2 id="dl-h">Downloads</h2>
+        <p class="hint" id="dl-locked" hidden>Downloads unlock once you have a license. <a href="/pricing/">See plans</a></p>
+        <p class="hint" id="dl-empty" hidden>No installers are published yet. Check back soon.</p>
+        <ul class="builds" id="builds" data-labels={JSON.stringify(platformLabels)}></ul>
+      </section>
+
+      <section aria-labelledby="lic-h" class="license">
+        <h2 id="lic-h">License</h2>
+        <dl id="license">
+          <div><dt>Plan</dt><dd id="plan">—</dd></div>
+          <div><dt>Status</dt><dd id="status">—</dd></div>
+          <div id="renew-row" hidden><dt id="renew-label">Renews</dt><dd id="renew">—</dd></div>
+        </dl>
+        <div class="buttons">
+          <button class="btn secondary" id="portal" type="button" hidden>Manage billing</button>
+          <a class="btn" id="buy" href="/pricing/" hidden>Choose a plan</a>
+          <button class="btn secondary" id="signout" type="button">Sign out</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<template id="build-tpl">
+  <li>
+    <div>
+      <strong class="b-name"></strong>
+      <span class="b-meta"></span>
+    </div>
+    <button class="btn small" type="button">Download</button>
+  </li>
+</template>
+
+<style>
+  .cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem 4rem; align-items: start; }
+  .account h2 { font-size: var(--t-3); padding-bottom: 0.8rem; border-bottom: 2px solid var(--ink); margin-bottom: 0.2rem; }
+  .hint { color: var(--muted); margin-top: 1rem; }
+  .builds { list-style: none; margin: 0; padding: 0; }
+  .builds li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--rule); }
+  .builds strong { display: block; font-size: var(--t-2); font-variation-settings: 'wdth' 112; }
+  .b-meta { color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; }
+  .license dl { margin: 0 0 1.5rem; }
+  .license dl > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--rule); }
+  .license dt { color: var(--muted); }
+  .license dd { margin: 0; font-weight: 600; text-align: right; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import { supabase, getSession, authConfigured } from '../lib/supabase';
+  import { api } from '../lib/api';
+
+  interface Me {
+    email: string;
+    hasAccess: boolean;
+    hasBillingAccount: boolean;
+    license: { plan: string | null; status: string; current_period_end: string | null; cancel_at_period_end: boolean } | null;
+  }
+  interface Release { platform: string; version: string; filename: string; sha256: string | null; size_bytes: number | null }
+
+  const labels: Record<string, string> = JSON.parse(document.getElementById('builds')?.dataset.labels ?? '{}');
+  const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+  const showError = (msg: string) => { $('error').textContent = msg; $('error').hidden = false; };
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const statusText: Record<string, string> = {
+    active: 'Active', trialing: 'Trial', past_due: 'Payment overdue', unpaid: 'Unpaid',
+    canceled: 'Cancelled', incomplete: 'Awaiting payment', incomplete_expired: 'Expired',
+    paused: 'Paused', refunded: 'Refunded', disputed: 'Under review',
+  };
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const fmtSize = (b: number | null) => (b ? `${(b / 1048576).toFixed(0)} MB` : '');
+
+  function renderLicense(me: Me) {
+    $('who').textContent = `Signed in as ${me.email}`;
+    const lic = me.license;
+    $('plan').textContent = lic?.plan ? lic.plan[0]!.toUpperCase() + lic.plan.slice(1) : 'None';
+    $('status').textContent = lic ? statusText[lic.status] ?? lic.status : 'No license';
+    if (lic?.current_period_end && lic.plan !== 'lifetime') {
+      $('renew-row').hidden = false;
+      $('renew-label').textContent = lic.cancel_at_period_end ? 'Access ends' : 'Renews';
+      $('renew').textContent = fmtDate(lic.current_period_end);
+    }
+    $('portal').hidden = !me.hasBillingAccount;
+    $('buy').hidden = me.hasAccess;
+    $('dl-locked').hidden = me.hasAccess;
+  }
+
+  async function renderBuilds(enabled: boolean) {
+    const { releases } = await api<{ releases: Release[] }>('/api/releases');
+    $('dl-empty').hidden = releases.length > 0;
+    const list = $('builds');
+    const tpl = $<HTMLTemplateElement>('build-tpl');
+    list.replaceChildren();
+    for (const r of releases) {
+      const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLLIElement;
+      li.querySelector('.b-name')!.textContent = labels[r.platform] ?? r.platform;
+      li.querySelector('.b-meta')!.textContent = [`Version ${r.version}`, fmtSize(r.size_bytes)].filter(Boolean).join(', ');
+      const btn = li.querySelector('button')!;
+      btn.disabled = !enabled;
+      btn.addEventListener('click', async () => {
+        btn.setAttribute('aria-busy', 'true');
+        try {
+          const dl = await api<{ url: string }>(`/api/download?platform=${encodeURIComponent(r.platform)}`);
+          window.location.assign(dl.url);
+        } catch (e) {
+          showError(e instanceof Error ? e.message : 'Download could not start.');
+        } finally {
+          btn.removeAttribute('aria-busy');
+        }
+      });
+      list.append(li);
+    }
+  }
+
+  async function main() {
+    if (!authConfigured) return showError('Sign-in isn’t connected yet. See docs/SETUP.md.');
+    const session = await getSession();
+    if (!session) return location.replace('/login/?next=%2Faccount%2F');
+
+    let me = await api<Me>('/api/me');
+    const justPaid = new URLSearchParams(location.search).get('checkout') === 'success';
+    if (justPaid && !me.hasAccess) {
+      // The Stripe webhook usually lands within seconds of the redirect.
+      $('confirming').hidden = false;
+      for (let i = 0; i < 10 && !me.hasAccess; i++) {
+        await sleep(2000);
+        me = await api<Me>('/api/me');
+      }
+      $('confirming').hidden = true;
+      if (!me.hasAccess) showError('Your payment went through but the license hasn’t activated yet. Refresh in a minute, or contact support if it persists.');
+    }
+    if (justPaid && me.hasAccess) $('activated').hidden = false;
+    if (justPaid) history.replaceState(null, '', '/account/');
+
+    renderLicense(me);
+    await renderBuilds(me.hasAccess);
+  }
+
+  $('portal').addEventListener('click', async () => {
+    $('portal').setAttribute('aria-busy', 'true');
+    try {
+      const { url } = await api<{ url: string }>('/api/portal', { method: 'POST' });
+      window.location.assign(url);
+    } catch (e) {
+      $('portal').removeAttribute('aria-busy');
+      showError(e instanceof Error ? e.message : 'Billing could not open.');
+    }
+  });
+
+  $('signout').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    location.replace('/');
+  });
+
+  main().catch((e) => showError(e instanceof Error ? e.message : 'Your account could not load.'));
+</script>

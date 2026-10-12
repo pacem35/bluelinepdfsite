@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../config/site';
+---
+<Base title="Terms of service">
+  <div class="wrap prose">
+    <header class="page-head">
+      <h1>Terms of service</h1>
+    </header>
+    <!-- TODO: replace with your real Terms of service before taking live payments. Stripe requires this page. -->
+    <p class="notice">This page is a placeholder. Publish your final Terms of service here before launch.</p>
+    <p>Questions: <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a></p>
+  </div>
+</Base>

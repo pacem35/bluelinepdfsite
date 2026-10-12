@@ -1,0 +1,75 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import { site } from '../config/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+const { title, description = site.tagline, noindex = false } = Astro.props;
+const fullTitle = title ? `${title} | ${site.name}` : `${site.name} — ${site.tagline}`;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const current = (href: string) => (path === href ? 'page' : undefined);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap"
+    />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/"><Logo />{site.name}</a>
+        <nav class="nav" aria-label="Main">
+          <a href="/pricing/" aria-current={current('/pricing')}>Pricing</a>
+          <a href="/login/" data-auth="signed-out" aria-current={current('/login')}>Sign in</a>
+          <a href="/account/" data-auth="signed-in" hidden aria-current={current('/account')}>Your account</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© {new Date().getFullYear()} {site.company}</span>
+        <nav aria-label="Footer">
+          <a href="/pricing/">Pricing</a>
+          <a href="/terms/">Terms</a>
+          <a href="/privacy/">Privacy</a>
+          <a href={`mailto:${site.supportEmail}`}>Support</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      import { supabase, authConfigured } from '../lib/supabase';
+      const toggle = (signedIn: boolean) => {
+        document.querySelectorAll<HTMLElement>('[data-auth]').forEach((el) => {
+          el.hidden = (el.dataset.auth === 'signed-in') !== signedIn;
+        });
+      };
+      if (authConfigured) {
+        supabase.auth.getSession().then(({ data }) => toggle(Boolean(data.session)));
+        supabase.auth.onAuthStateChange((_e, session) => toggle(Boolean(session)));
+      }
+    </script>
+  </body>
+</html>

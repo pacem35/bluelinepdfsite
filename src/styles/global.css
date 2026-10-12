@@ -1,0 +1,135 @@
+/* Blueline PDF — a "blueline" is the blue prepress proof checked before a job goes to press.
+   Cool proof paper, diazo-blue ink, crop marks as the one decorative device. */
+
+:root {
+  --paper: #f4f7fb;
+  --sheet: #ffffff;
+  --proof: #e3ecf8;      /* light proof tint */
+  --line: #a9bfe3;       /* proof linework */
+  --blue: #1f3f99;       /* diazo blue — brand + actions */
+  --blue-deep: #142a6b;
+  --ink: #0f1d3a;        /* text */
+  --muted: #4d5c78;
+  --rule: #cfd9e8;
+  --danger: #a3261f;
+  --ok: #17663a;
+
+  --font: 'Archivo', system-ui, sans-serif;
+  --measure: 66ch;
+  --gutter: clamp(16px, 4vw, 40px);
+  --max: 1160px;
+
+  /* Type scale (major third, 17px base) */
+  --t-0: 0.8125rem;
+  --t-1: 1.0625rem;
+  --t-2: 1.328rem;
+  --t-3: 1.66rem;
+  --t-4: 2.075rem;
+  --t-5: clamp(2.4rem, 5.4vw, 4.05rem);
+
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--t-1);
+  line-height: 1.55;
+  font-variation-settings: 'wdth' 100;
+  text-rendering: optimizeLegibility;
+}
+img, svg { display: block; max-width: 100%; }
+a { color: var(--blue); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+a:hover { color: var(--blue-deep); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 2px; }
+p { margin: 0 0 1em; max-width: var(--measure); }
+
+h1, h2, h3 {
+  margin: 0;
+  line-height: 1.05;
+  font-weight: 700;
+  font-variation-settings: 'wdth' 118;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+h1 { font-size: var(--t-5); }
+h2 { font-size: var(--t-4); }
+h3 { font-size: var(--t-2); line-height: 1.2; }
+
+.wrap { width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; }
+.narrow { width: min(100% - 2 * var(--gutter), 34rem); margin-inline: auto; }
+
+/* Header ------------------------------------------------------------------------------------- */
+.site-header { border-bottom: 1px solid var(--rule); background: var(--paper); }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 64px; }
+.brand { display: flex; align-items: center; gap: 0.6rem; color: var(--ink); text-decoration: none; font-weight: 700; font-variation-settings: 'wdth' 118; font-size: 1.1rem; }
+.brand svg { width: 26px; height: 26px; }
+.nav { display: flex; align-items: center; gap: 1.4rem; }
+.nav a { color: var(--ink); text-decoration: none; font-size: 0.97rem; }
+.nav a:hover { color: var(--blue); }
+.nav a[aria-current='page'] { color: var(--blue); text-decoration: underline; }
+
+/* Buttons ------------------------------------------------------------------------------------ */
+.btn {
+  --bg: var(--blue); --fg: #fff; --bd: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 46px; padding: 0 1.25rem;
+  font: inherit; font-weight: 600; font-size: 1rem;
+  color: var(--fg); background: var(--bg); border: 1.5px solid var(--bd); border-radius: 4px;
+  text-decoration: none; cursor: pointer;
+}
+.btn:hover { --bg: var(--blue-deep); --bd: var(--blue-deep); color: #fff; }
+.btn.secondary { --bg: transparent; --fg: var(--blue); }
+.btn.secondary:hover { --bg: var(--proof); --fg: var(--blue-deep); }
+.btn[disabled], .btn[aria-busy='true'] { opacity: 0.55; cursor: progress; }
+.btn.small { min-height: 38px; padding: 0 0.9rem; font-size: 0.93rem; }
+
+/* Forms -------------------------------------------------------------------------------------- */
+label { display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.35rem; }
+input[type='email'], input[type='password'] {
+  width: 100%; min-height: 46px; padding: 0 0.85rem;
+  font: inherit; color: var(--ink); background: var(--sheet);
+  border: 1.5px solid var(--line); border-radius: 4px;
+}
+input:focus-visible { outline-offset: 0; border-color: var(--blue); }
+.field { margin-bottom: 1.1rem; }
+.notice { padding: 0.8rem 1rem; border-left: 3px solid var(--blue); background: var(--proof); margin: 0 0 1.25rem; max-width: none; }
+.notice.error { border-color: var(--danger); background: #fbeceb; color: var(--danger); }
+.notice.ok { border-color: var(--ok); background: #e8f4ed; color: var(--ok); }
+[hidden] { display: none !important; }
+
+/* Crop marks — the signature device. Put .cropped on any block. --------------------------------- */
+.cropped { position: relative; }
+.cropped > .crop { position: absolute; width: 22px; height: 22px; pointer-events: none; }
+.cropped > .crop::before, .cropped > .crop::after { content: ''; position: absolute; background: var(--blue); }
+.cropped > .crop::before { width: 22px; height: 1px; }
+.cropped > .crop::after { width: 1px; height: 22px; }
+.crop.tl { top: -30px; left: -30px; }  .crop.tl::before { bottom: 0; left: 0; } .crop.tl::after { right: 0; top: 0; }
+.crop.tr { top: -30px; right: -30px; } .crop.tr::before { bottom: 0; right: 0; } .crop.tr::after { left: 0; top: 0; }
+.crop.bl { bottom: -30px; left: -30px; } .crop.bl::before { top: 0; left: 0; } .crop.bl::after { right: 0; bottom: 0; }
+.crop.br { bottom: -30px; right: -30px; } .crop.br::before { top: 0; right: 0; } .crop.br::after { left: 0; bottom: 0; }
+
+/* Footer ------------------------------------------------------------------------------------- */
+.site-footer { border-top: 1px solid var(--rule); margin-top: 6rem; padding: 2rem 0 3rem; color: var(--muted); font-size: 0.93rem; }
+.site-footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+.site-footer nav { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.site-footer a { color: var(--muted); }
+
+/* Page heading for inner pages ---------------------------------------------------------------- */
+.page-head { padding: 4rem 0 2.5rem; }
+.page-head p { color: var(--muted); font-size: var(--t-2); margin-top: 0.75rem; }
+
+.prose h2 { font-size: var(--t-3); margin: 2.2rem 0 0.8rem; }
+.prose { padding-bottom: 2rem; }
+
+@media (max-width: 640px) {
+  .nav { gap: 1rem; }
+  .nav .hide-sm { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

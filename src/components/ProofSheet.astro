@@ -1,0 +1,84 @@
+---
+// The hero image: a document page set up like a printer's blueline proof — crop marks,
+// a registration target, and the edits Blueline PDF makes (a highlight, a margin note, a signature).
+---
+<figure class="proof cropped" aria-label="A contract page being edited: one clause highlighted, a margin note, and a signature">
+  <span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span>
+  <svg class="reg" viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="11" fill="none" stroke="currentColor" stroke-width="1.2" />
+    <circle cx="20" cy="20" r="5" fill="currentColor" />
+    <path d="M20 0v40M0 20h40" stroke="currentColor" stroke-width="1.2" />
+  </svg>
+
+  <div class="page">
+    <div class="doc-title"></div>
+    <div class="doc-sub"></div>
+    <div class="lines">
+      <i style="--w:96%"></i><i style="--w:92%"></i><i style="--w:98%"></i><i style="--w:64%"></i>
+    </div>
+    <div class="lines">
+      <i style="--w:94%"></i>
+      <i class="hl" style="--w:88%"></i>
+      <i class="hl" style="--w:70%"></i>
+      <i style="--w:97%"></i><i style="--w:40%"></i>
+    </div>
+    <div class="lines">
+      <i style="--w:95%"></i><i style="--w:91%"></i><i style="--w:58%"></i>
+    </div>
+    <div class="sign">
+      <svg viewBox="0 0 220 60" aria-hidden="true">
+        <path class="ink" d="M6 42c14-22 26-34 32-28 6 7-12 30-6 32 8 3 18-30 28-28 8 2-2 22 6 22 10 0 14-18 24-18 8 0 4 14 12 14 12 0 18-16 30-16 10 0 6 10 16 10 14 0 30-8 60-10" />
+      </svg>
+      <span class="sigline"></span>
+    </div>
+  </div>
+
+  <aside class="note">Net 30, not net 60. Agreed on the call.</aside>
+</figure>
+
+<style>
+  .proof {
+    margin: 30px 30px 30px auto;
+    width: min(100%, 420px);
+    color: var(--blue);
+  }
+  .reg { position: absolute; width: 30px; top: -46px; left: 50%; translate: -50% 0; color: var(--blue); }
+  .page {
+    aspect-ratio: 8.5 / 11;
+    background: var(--sheet);
+    border: 1px solid var(--line);
+    padding: 11% 10% 9%;
+    display: flex;
+    flex-direction: column;
+    gap: 7%;
+    box-shadow: 0 1px 0 var(--line), 12px 12px 0 var(--proof);
+  }
+  .doc-title { height: 14px; width: 58%; background: var(--blue); border-radius: 1px; }
+  .doc-sub { height: 7px; width: 34%; background: var(--line); margin-top: -4%; }
+  .lines { display: grid; gap: 9px; }
+  .lines i { display: block; height: 6px; width: var(--w); background: var(--proof); border-radius: 1px; }
+  .lines i.hl { background: var(--line); box-shadow: 0 0 0 4px color-mix(in srgb, var(--line) 45%, transparent); }
+  .sign { margin-top: auto; width: 62%; }
+  .sign svg { width: 100%; height: auto; overflow: visible; }
+  .ink {
+    fill: none; stroke: var(--blue-deep); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 520; stroke-dashoffset: 520;
+    animation: sign 1.8s 0.5s cubic-bezier(0.55, 0.1, 0.35, 1) forwards;
+  }
+  .sigline { display: block; height: 1px; background: var(--blue); margin-top: 2px; }
+  .note {
+    position: absolute; right: -18px; top: 41%;
+    width: 46%; padding: 0.7rem 0.85rem;
+    background: var(--blue); color: #fff;
+    font-size: 0.86rem; line-height: 1.35;
+    border-radius: 3px;
+  }
+  .note::before {
+    content: ''; position: absolute; left: -9px; top: 14px;
+    border: 5px solid transparent; border-right: 5px solid var(--blue); border-left: 0;
+    width: 0; height: 0; border-right-width: 9px;
+  }
+  @keyframes sign { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .ink { stroke-dashoffset: 0; } }
+  @media (max-width: 900px) { .proof { margin: 50px auto 30px; width: min(calc(100% - 64px), 420px); } .note { right: -14px; } }
+</style>

@@ -1,0 +1,31 @@
+{
+  "name": "bluelinepdfsite",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "typecheck": "astro check && tsc -p worker/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "release:prepare": "node scripts/prepare-release.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "astro": "^7.3.8",
+    "aws4fetch": "^1.0.20",
+    "stripe": "^23.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20261012.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4",
+    "wrangler": "^4.149.0"
+  }
+}

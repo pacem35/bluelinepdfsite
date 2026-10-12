@@ -1,0 +1,13 @@
+# Copy to .dev.vars for local `wrangler dev`. Never commit .dev.vars.
+# In production, set each of these with `npx wrangler secret put NAME` (or in the Cloudflare dashboard).
+SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+# Optional overrides of wrangler.jsonc vars for local testing:
+STRIPE_PRICE_MONTHLY=price_...
+STRIPE_PRICE_YEARLY=price_...
+STRIPE_PRICE_LIFETIME=

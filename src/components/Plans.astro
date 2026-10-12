@@ -1,0 +1,86 @@
+---
+import { plans } from '../config/site';
+---
+<div class="plans" role="list">
+  {plans.map((p) => (
+    <section class:list={['plan', { featured: 'featured' in p && p.featured }]} role="listitem" aria-labelledby={`plan-${p.id}`}>
+      <h3 id={`plan-${p.id}`}>{p.name}</h3>
+      <p class="price"><span class="amount">{p.price}</span> <span class="cadence">{p.cadence}</span></p>
+      <p class="blurb">{p.blurb}</p>
+      <button class:list={['btn', { secondary: !('featured' in p && p.featured) }]} type="button" data-plan={p.id}>
+        Choose {p.name.toLowerCase()}
+      </button>
+    </section>
+  ))}
+</div>
+<p class="plan-error notice error" role="alert" hidden></p>
+
+<style>
+  .plans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 2px solid var(--ink);
+  }
+  .plan {
+    padding: 1.6rem 1.5rem 1.8rem;
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+  }
+  .plan:last-child { border-right: 0; }
+  .plan.featured { background: var(--sheet); box-shadow: inset 0 4px 0 var(--blue); }
+  .price { margin: 0.9rem 0 0.4rem; }
+  .amount { font-size: var(--t-4); font-weight: 700; font-variation-settings: 'wdth' 118; }
+  .cadence { color: var(--muted); }
+  .blurb { color: var(--muted); flex: 1; margin-bottom: 1.4rem; }
+  .plan-error { margin-top: 1.5rem; }
+  @media (max-width: 760px) {
+    .plans { grid-template-columns: 1fr; }
+    .plan { border-right: 0; border-bottom: 1px solid var(--rule); }
+  }
+</style>
+
+<script>
+  import { getSession } from '../lib/supabase';
+  import { startCheckout, ApiError } from '../lib/api';
+
+  const errorBox = document.querySelector<HTMLElement>('.plan-error');
+  const showError = (msg: string) => {
+    if (!errorBox) return;
+    errorBox.textContent = msg;
+    errorBox.hidden = false;
+  };
+
+  async function choose(button: HTMLButtonElement) {
+    const plan = button.dataset.plan!;
+    const session = await getSession();
+    if (!session) {
+      window.location.assign(`/login/?next=${encodeURIComponent('/pricing/')}&plan=${plan}`);
+      return;
+    }
+    button.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+    try {
+      await startCheckout(plan);
+    } catch (err) {
+      button.removeAttribute('aria-busy');
+      button.disabled = false;
+      if (err instanceof ApiError && err.code === 'already_licensed') {
+        showError(err.message);
+      } else {
+        showError(err instanceof Error ? err.message : 'Checkout could not start. Try again.');
+      }
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-plan]').forEach((b) => b.addEventListener('click', () => choose(b)));
+
+  // Returning from sign-in with a plan already picked: continue straight to checkout.
+  const pending = new URLSearchParams(location.search).get('plan');
+  if (pending) {
+    getSession().then((s) => {
+      const btn = document.querySelector<HTMLButtonElement>(`[data-plan="${CSS.escape(pending)}"]`);
+      if (s && btn) choose(btn);
+    });
+  }
+</script>
